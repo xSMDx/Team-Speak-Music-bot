@@ -1,0 +1,17 @@
+[Unit]
+Description=TSMB - TeamSpeak music bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tsmb
+WorkingDirectory=/opt/tsmb
+Environment=YTDLP_BIN=/opt/tsmb/.venv/bin/yt-dlp
+ExecStartPre=-/opt/tsmb/.venv/bin/pip install -q -U yt-dlp[default]
+ExecStart=/usr/bin/node /opt/tsmb/src/index.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

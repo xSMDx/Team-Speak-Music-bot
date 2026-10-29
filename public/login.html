@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TSMB · Login</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="login-body">
+  <form class="login-card" id="form">
+    <div class="brand big"><img src="/favicon.svg" alt=""><span>TSMB</span></div>
+    <p class="muted">TeamSpeak Music Bot</p>
+    <input type="password" id="pw" placeholder="Password" autocomplete="current-password" autofocus required>
+    <button class="btn primary" type="submit">Log in</button>
+    <p class="error" id="err"></p>
+  </form>
+  <script>
+    document.getElementById('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('err');
+      err.textContent = '';
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: document.getElementById('pw').value }),
+      });
+      if (res.ok) return location.replace('/');
+      err.textContent = (await res.json().catch(() => ({}))).error || 'Login failed';
+    });
+  </script>
+</body>
+</html>

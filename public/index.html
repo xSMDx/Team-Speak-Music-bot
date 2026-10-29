@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TSMB · Music Bot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="/favicon.svg" alt=""><span>TSMB</span></div>
+    <div class="status" id="status"><span class="dot"></span><span id="statusText">Connecting…</span></div>
+    <button class="btn ghost small" id="logout" title="Log out">Log out</button>
+  </header>
+
+  <main class="layout">
+    <section class="card now" id="now">
+      <div class="art" id="art"></div>
+      <div class="now-info">
+        <div class="eyebrow" id="nowLabel">Nothing playing</div>
+        <a class="now-title" id="nowTitle" target="_blank" rel="noopener">Add a song to get started</a>
+        <div class="now-meta muted" id="nowMeta"></div>
+        <div class="progress" id="progress" title="Click to seek"><div class="bar" id="bar"></div></div>
+        <div class="times muted"><span id="pos">0:00</span><span id="dur">0:00</span></div>
+        <div class="controls">
+          <button class="icon-btn big" id="btnToggle" title="Play / pause"></button>
+          <button class="icon-btn" id="btnSkip" title="Skip"></button>
+          <button class="icon-btn" id="btnStop" title="Stop &amp; clear queue"></button>
+          <div class="volume">
+            <span class="vol-icon" id="volIcon"></span>
+            <input type="range" id="vol" min="0" max="100" step="1">
+            <span class="muted" id="volVal">50%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card add">
+      <h2>Add music</h2>
+      <form id="addForm" class="add-row">
+        <input id="addInput" type="text" placeholder="YouTube / Spotify / direct link — or search words" autocomplete="off">
+        <button class="btn primary" type="submit">Add</button>
+        <button class="btn" type="button" id="addNext" title="Add to the front of the queue">Play next</button>
+      </form>
+      <label class="drop" id="drop">
+        <input type="file" id="files" multiple accept="audio/*,video/*,.mp3,.m4a,.flac,.wav,.ogg,.opus,.webm">
+        <strong>Drop audio files here</strong>
+        <span class="muted">or click to choose — multiple files allowed</span>
+      </label>
+      <div id="uploads" class="uploads"></div>
+    </section>
+
+    <section class="card queue">
+      <div class="queue-head">
+        <h2>Queue <span class="pill" id="qCount">0</span></h2>
+        <span class="muted" id="qTotal"></span>
+        <div class="spacer"></div>
+        <button class="btn small" id="btnShuffle">Shuffle</button>
+        <button class="btn small danger" id="btnClear">Clear</button>
+      </div>
+      <ol class="qlist" id="qlist"></ol>
+      <p class="empty muted" id="qEmpty">The queue is empty. Songs are deleted automatically after they are played.</p>
+    </section>
+
+    <section class="card help">
+      <details>
+        <summary><h2>TeamSpeak chat commands</h2></summary>
+        <div class="cmds">
+          <code>/play &lt;link | search&gt;</code><span>Add a YouTube, Spotify or direct link, or search YouTube</span>
+          <code>/playnext &lt;link&gt;</code><span>Add to the front of the queue</span>
+          <code>/pause</code> <span>Pause</span>
+          <code>/resume</code><span>Continue</span>
+          <code>/skip</code><span>Skip the current song</span>
+          <code>/stop</code><span>Stop and clear the queue</span>
+          <code>/np</code><span>Show what is playing</span>
+          <code>/queue [page]</code><span>Show the queue</span>
+          <code>/remove &lt;n&gt;</code><span>Remove song #n</span>
+          <code>/move &lt;from&gt; &lt;to&gt;</code><span>Move a song</span>
+          <code>/up &lt;n&gt; · /down &lt;n&gt; · /top &lt;n&gt;</code><span>Move song #n up, down or to the top</span>
+          <code>/shuffle · /clear</code><span>Shuffle or empty the queue</span>
+          <code>/vol &lt;0-100&gt;</code><span>Set the volume</span>
+          <code>/seek &lt;m:ss&gt;</code><span>Jump to a time</span>
+          <code>/join</code><span>Bring the bot to your channel</span>
+          <code>/help</code><span>List all commands</span>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <div class="toasts" id="toasts"></div>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "tsmb",
+  "version": "1.0.0",
+  "description": "TeamSpeak music bot with web UI (YouTube, Spotify, uploads, direct links)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "engines": {
+    "node": ">=20.19"
+  },
+  "dependencies": {
+    "@honeybbq/teamspeak-client": "0.3.3",
+    "express": "^4.22.3",
+    "multer": "^2.5.0"
+  }
+}

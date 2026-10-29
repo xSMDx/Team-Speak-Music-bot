@@ -1,0 +1,16 @@
+services:
+  tsmb:
+    build: .
+    container_name: tsmb
+    restart: unless-stopped
+    # host networking: the web UI stays on 127.0.0.1:8090 (only nginx can reach it)
+    # and TS_HOST=127.0.0.1 works when TeamSpeak runs on the same machine
+    network_mode: host
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
