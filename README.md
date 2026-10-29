@@ -73,7 +73,7 @@ Open https://music.example.com and log in with `WEB_PASSWORD`.
 **Using a different proxy?**
 - **Caddy**: `music.example.com { reverse_proxy 127.0.0.1:8090 }`
 - **Nginx Proxy Manager / a proxy inside Docker**: set `WEB_HOST=0.0.0.0` in `.env`, then add a proxy host `music.example.com → <server-ip>:8090`. Block port 8090 in your firewall so it can't be opened by IP.
-- **Cloudflare (orange cloud)**: works as is. Cloudflare's free plan limits uploads to 100 MB per file. The UI uploads files one at a time, so multi-upload still works.
+- **Cloudflare** (proxied DNS or Cloudflare Tunnel): see [docs/cloudflare.md](docs/cloudflare.md) for the SSL mode, real visitor IPs, upload limits and troubleshooting.
 
 ---
 
@@ -99,6 +99,10 @@ Open https://music.example.com and log in with `WEB_PASSWORD`.
 | `/help` | List the commands |
 
 The bot reads the chat of the channel it's in, and private messages sent to it.
+
+## Customizing
+
+Want your own commands, a different search site, admin-only commands, radio shortcuts or a new look? [docs/customizing.md](docs/customizing.md) explains how the code fits together and has step-by-step recipes.
 
 ## Troubleshooting
 

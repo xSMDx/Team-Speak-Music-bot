@@ -46,6 +46,8 @@ export function startWeb(music) {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'same-origin');
+    // keep CDNs like Cloudflare from caching pages behind the login (or the redirect to it)
+    res.setHeader('Cache-Control', 'private, no-cache');
     // block cross-site requests that change things
     if (req.method !== 'GET' && req.method !== 'HEAD' && req.headers.origin) {
       let ok = false;
@@ -100,7 +102,7 @@ export function startWeb(music) {
     res.redirect('/login');
   });
 
-  app.use(express.static(pub, { index: 'index.html' }));
+  app.use(express.static(pub, { index: 'index.html', cacheControl: false }));
 
   // ---------------------------------------------------------- live updates (SSE)
   const clients = new Set();
