@@ -41,7 +41,8 @@ The bot is plain Node.js with no build step and only three dependencies. You can
 | `src/config.js` | Reads `.env` and holds every setting with its default. |
 | `src/ts.js` | Connects to TeamSpeak, reconnects, walks back after a channel kick, sends chat messages and voice. |
 | `src/commands.js` | All `/` chat commands, their help texts and aliases. |
-| `src/sources.js` | Recognizes YouTube, Spotify, direct links and searches, and downloads songs. |
+| `src/sources.js` | Recognizes YouTube, Spotify, direct links and searches, runs the search providers, and downloads songs. |
+| `src/search.js` | Keeps search results for 30 minutes so they can be picked later (`/pick`, the web UI's search panel). |
 | `src/queue.js` | The queue: adding, reordering, prefetching, deleting files after playing, saving to `data/state.json`. |
 | `src/player.js` | Runs ffmpeg and sends the audio in real time. Handles volume, pause, seek and resuming after a reconnect. |
 | `src/ogg.js` | Splits ffmpeg's Ogg output into single Opus packets. |
@@ -149,6 +150,8 @@ Plain search words go to YouTube through yt-dlp's `ytsearch1:` (first result). y
   }
 ```
 
+The search panel and `/search` use `searchYoutube()` in the same file. Change `ytsearch${limit}:` there to `scsearch${limit}:`, and the badge `source: 'youtube'` if you like. You can also add a whole new search provider. Add it to `searchProviders()`, which controls the tabs in the web UI and the `/search <alias> words` prefixes. Then handle its `id` in `search()`, returning queue entries like the other providers do.
+
 Spotify links are played by searching YouTube for each track. That's the `ytsearch1:${title} audio` line in `resolveSpotify()`, and you can change it the same way.
 
 Links from SoundCloud, Bandcamp, Vimeo and [many other sites](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) already work without any changes. Any link that isn't a direct audio file goes through yt-dlp.
@@ -254,7 +257,10 @@ curl -b cookies.txt -H 'Content-Type: application/json' -d '{"input":"never gonn
 |---|---|---|
 | `GET /api/state` | | Current song, queue, volume and connection status |
 | `GET /api/events` | | The same state as a live stream (Server-Sent Events) |
-| `POST /api/add` | `{"input": "...", "next": false}` | Add a link or search |
+| `POST /api/add` | `{"input": "...", "next": false}` | Add a link or search (plays the first result) |
+| `GET /api/search/providers` | | The sites you can search, e.g. `[{"id":"youtube","label":"YouTube"}]` |
+| `GET /api/search?q=...&provider=youtube` | | Up to 10 results, each with an `id` |
+| `POST /api/search/add` | `{"id": "...", "next": false}` | Add a search result (ids are kept for 30 minutes) |
 | `POST /api/upload` | form field `files` | Upload audio files (`?next=1` to play next) |
 | `POST /api/control/<action>` | | `pause`, `resume`, `toggle`, `skip`, `stop`, `shuffle`, `clear` |
 | `POST /api/volume` | `{"volume": 40}` | Set the volume (0–100) |

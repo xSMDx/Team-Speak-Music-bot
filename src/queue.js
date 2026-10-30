@@ -38,8 +38,12 @@ export class MusicManager extends EventEmitter {
 
   // ---------------------------------------------------------- adding
 
-  async add(input, { addedBy = 'web', next = false } = {}) {
-    const entries = await resolve(input);
+  async add(input, opts) {
+    return this.addEntries(await resolve(input), opts);
+  }
+
+  /** Adds entries that were already resolved (e.g. picked from search results). */
+  addEntries(entries, { addedBy = 'web', next = false } = {}) {
     const items = entries.map((e) => ({
       ...e,
       id: newId(),

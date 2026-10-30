@@ -11,6 +11,8 @@ const ICON = {
   up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>',
   down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
   top: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 5h12M7 15l5-5 5 5M12 10v10"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   grip: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>',
 };
@@ -267,6 +269,102 @@ $('addForm').addEventListener('submit', (e) => {
   addInput(false);
 });
 $('addNext').onclick = () => addInput(true);
+
+// ------------------------------------------------------------------ search
+let providers = [];
+let provider = null;
+let searchSeq = 0;
+
+function renderTabs() {
+  const tabs = $('searchTabs');
+  tabs.hidden = providers.length < 2;
+  tabs.innerHTML = providers.map((p) => `<button type="button" class="tab${p.id === provider ? ' active' : ''}" data-id="${esc(p.id)}">${esc(p.label)}</button>`).join('');
+  const label = providers.find((p) => p.id === provider)?.label;
+  $('searchInput').placeholder = label ? `Search ${label}…` : 'Search for a song…';
+}
+
+function resultsMsg(text) {
+  $('resultsMsg').hidden = !text;
+  $('resultsMsg').textContent = text || '';
+}
+
+async function runSearch() {
+  const q = $('searchInput').value.trim();
+  if (!q) return $('searchInput').focus();
+  const seq = ++searchSeq;
+  $('results').innerHTML = '';
+  resultsMsg('Searching…');
+  try {
+    const r = await api(`/api/search?q=${encodeURIComponent(q)}&provider=${encodeURIComponent(provider || '')}`, { method: 'GET' });
+    if (seq !== searchSeq || !r) return;
+    renderResults(r.results);
+    resultsMsg(r.results.length ? '' : 'Nothing found. Try other words.');
+  } catch (e) {
+    if (seq === searchSeq) resultsMsg(e.message);
+  }
+}
+
+function renderResults(results) {
+  $('results').innerHTML = results.map((r) => {
+    const thumb = r.thumbnail ? ` style="background-image:url(&quot;${esc(r.thumbnail)}&quot;)"` : '';
+    const artist = r.artist && !r.title.includes(r.artist) ? `<span>${esc(r.artist)}</span>` : '';
+    return `<li class="qitem" data-id="${esc(r.id)}" title="Click to add to the queue">
+      <span class="qthumb"${thumb}>${r.thumbnail ? '' : ICON.note}</span>
+      <div class="qmain">
+        <div class="qtitle">${esc(r.title)}</div>
+        <div class="qmeta">
+          <span class="badge src-${esc(r.source)}">${SRC_LABEL[r.source] || esc(r.source)}</span>
+          <span>${r.duration ? fmt(r.duration) : '–:––'}</span>
+          ${artist}
+        </div>
+      </div>
+      <div class="qactions">
+        <button class="top" data-op="next" title="Play next">${ICON.top}</button>
+        <button class="add" data-op="add" title="Add to the queue">${ICON.plus}</button>
+      </div>
+    </li>`;
+  }).join('');
+}
+
+async function addResult(li, next) {
+  if (li.classList.contains('busy')) return;
+  li.classList.add('busy');
+  try {
+    const r = await api('/api/search/add', { body: { id: li.dataset.id, next } });
+    if (!r) return;
+    toast(next ? `Plays next: ${r.title}` : `Added: ${r.title}`);
+    li.classList.add('added');
+    li.querySelector('.add').innerHTML = ICON.check;
+  } catch (e) {
+    toast(e.message, true);
+  } finally {
+    li.classList.remove('busy');
+  }
+}
+
+$('searchForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  runSearch();
+});
+$('searchTabs').addEventListener('click', (e) => {
+  const tab = e.target.closest('.tab');
+  if (!tab || tab.dataset.id === provider) return;
+  provider = tab.dataset.id;
+  renderTabs();
+  if ($('searchInput').value.trim()) runSearch();
+});
+$('results').addEventListener('click', (e) => {
+  const li = e.target.closest('.qitem');
+  if (li) addResult(li, e.target.closest('button')?.dataset.op === 'next');
+});
+
+api('/api/search/providers', { method: 'GET' })
+  .then((list) => {
+    providers = list || [];
+    provider = providers[0]?.id || null;
+    renderTabs();
+  })
+  .catch(() => {});
 
 // ------------------------------------------------------------------ uploads
 // Files go up one per request: works behind proxies with body size limits

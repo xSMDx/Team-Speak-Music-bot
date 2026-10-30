@@ -217,6 +217,58 @@ async function resolveSpotify(input) {
   });
 }
 
+// ---------------------------------------------------------------- search
+
+/** Sites the search box and /search can look through. Spotify search needs API keys. */
+export function searchProviders() {
+  const list = [{ id: 'youtube', label: 'YouTube', aliases: ['yt', 'youtube'] }];
+  if (config.spotify.clientId && config.spotify.clientSecret) list.push({ id: 'spotify', label: 'Spotify', aliases: ['sp', 'spotify'] });
+  return list;
+}
+
+/** Returns up to `limit` queue entries for `query`, best match first. */
+export async function search(provider, query, limit = 10) {
+  const q = cleanInput(query);
+  if (!q) throw new Error('Type something to search for');
+  if (provider === 'spotify') return searchSpotify(q, limit);
+  if (provider === 'youtube') return searchYoutube(q, limit);
+  throw new Error(`Unknown search provider "${provider}"`);
+}
+
+async function searchYoutube(q, limit) {
+  const json = await ytdlpJson(['--flat-playlist', '-J', `ytsearch${limit}:${q}`]);
+  return (json.entries || []).filter((e) => e?.id).map((e) => {
+    const link = `https://www.youtube.com/watch?v=${e.id}`;
+    return {
+      title: e.title || link,
+      artist: e.channel || e.uploader || '',
+      source: 'youtube',
+      input: link,
+      url: link,
+      duration: Math.round(e.duration || 0),
+      thumbnail: e.thumbnails?.at(-1)?.url || `https://i.ytimg.com/vi/${e.id}/mqdefault.jpg`,
+    };
+  });
+}
+
+async function searchSpotify(q, limit) {
+  const res = await spotifyApi(`/search?type=track&limit=${limit}&q=${encodeURIComponent(q)}`);
+  return (res.tracks?.items || []).filter(Boolean).map((t) => {
+    const artist = (t.artists || []).map((a) => a.name).join(', ');
+    const title = artist ? `${artist} - ${t.name}` : t.name;
+    return {
+      title,
+      artist,
+      source: 'spotify',
+      // Spotify audio is DRM-protected, so the song is played from YouTube
+      input: `ytsearch1:${title} audio`,
+      url: t.external_urls?.spotify || null,
+      duration: Math.round((t.duration_ms || 0) / 1000),
+      thumbnail: t.album?.images?.at(-2)?.url || t.album?.images?.[0]?.url,
+    };
+  });
+}
+
 // ---------------------------------------------------------------- download
 
 /**

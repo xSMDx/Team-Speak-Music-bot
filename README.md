@@ -3,6 +3,7 @@
 A TeamSpeak 3 music bot with a password-protected web UI.
 
 - Plays **YouTube** links, playlists and search, **Spotify** tracks, albums and playlists, **direct links** (mp3 files, internet radio) and **uploaded files** (several at once)
+- **Search** in the web UI or with `/search` in the chat: see the results (YouTube, plus Spotify with API keys) and pick the ones to play
 - **Queue**: drag and drop or ▲ ▼ ⤒ buttons to reorder, remove, shuffle, clear
 - **Songs delete themselves** after they're played, skipped or removed
 - **Reconnects automatically** after a disconnect, a server restart, a kick or a network drop, and resumes the song where it stopped. If someone kicks it from its channel, it walks back.
@@ -82,6 +83,8 @@ Open https://music.example.com and log in with `WEB_PASSWORD`.
 | Command | What it does |
 |---|---|
 | `/play <link or search>` (`/p`) | Add a YouTube, Spotify or direct link, or search YouTube |
+| `/search <words>` (`/f`) | Show up to 10 results. Start with `sp` to search Spotify (needs API keys) |
+| `/pick <n> [n ...]`, `/picknext <n>` | Add result #n of your last search, e.g. `/pick 1 3`, `/pick all` |
 | `/playnext <link>` (`/pn`) | Add to the front of the queue |
 | `/pause`, `/resume` | Pause or continue |
 | `/skip` (`/s`) | Skip the current song |
@@ -109,7 +112,7 @@ Want your own commands, a different search site, admin-only commands, radio shor
 - **YouTube says "Sign in to confirm you're not a bot"**: YouTube sometimes blocks server IPs. Export your YouTube cookies (browser extension "Get cookies.txt LOCALLY") to `data/cookies.txt` and restart.
 - **Bot is silent in a moderated channel**: give it talk power, or put it in a server group that has `i_client_talk_power`.
 - **"client could not validate identity"**: the server needs a higher security level. Set `TS_IDENTITY_LEVEL`, delete `data/identity.txt` and restart.
-- **Spotify**: Spotify's audio is DRM-protected, so each track is looked up and played from YouTube. If Spotify links fail, add `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` (free at developer.spotify.com).
+- **Spotify**: Spotify's audio is DRM-protected, so each track is looked up and played from YouTube. If Spotify links fail, add `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET` (free at developer.spotify.com). Those keys are also needed for the Spotify tab in the search.
 - **Forgot the web password**: change `WEB_PASSWORD` in `.env` and restart.
 - yt-dlp updates itself every time the bot starts, so YouTube changes don't break it.
 

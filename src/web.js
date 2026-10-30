@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import express from 'express';
 import multer from 'multer';
 import { config, ROOT } from './config.js';
+import { findSongs, getResult, searchProviders } from './search.js';
 
 const COOKIE = 'tsmb_session';
 const SESSION_DAYS = 30;
@@ -151,6 +152,20 @@ export function startWeb(music) {
     if (!input) throw new Error('Paste a link or type something to search');
     const items = await music.add(input, { addedBy: 'Web', next: !!req.body?.next });
     return { added: items.length, title: items[0]?.title };
+  }));
+
+  app.get('/api/search/providers', (req, res) => res.json(searchProviders().map(({ id, label }) => ({ id, label }))));
+
+  app.get('/api/search', wrap(async (req) => {
+    const found = await findSongs(String(req.query.q || ''), req.query.provider ? String(req.query.provider) : null);
+    return { provider: found.provider.id, results: found.results };
+  }));
+
+  app.post('/api/search/add', json, wrap(async (req) => {
+    const entry = getResult(String(req.body?.id || ''));
+    if (!entry) throw new Error('This result expired. Search again.');
+    const [item] = music.addEntries([entry], { addedBy: 'Web', next: !!req.body?.next });
+    return { title: item.title };
   }));
 
   const upload = multer({

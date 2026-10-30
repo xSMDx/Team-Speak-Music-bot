@@ -51,6 +51,19 @@
       <div id="uploads" class="uploads"></div>
     </section>
 
+    <section class="card search">
+      <div class="queue-head">
+        <h2>Search</h2>
+        <div class="tabs" id="searchTabs" hidden></div>
+      </div>
+      <form id="searchForm" class="add-row">
+        <input id="searchInput" type="search" placeholder="Search for a song…" autocomplete="off" enterkeyhint="search">
+        <button class="btn primary" type="submit">Search</button>
+      </form>
+      <ol class="qlist rlist" id="results"></ol>
+      <p class="empty muted" id="resultsMsg" hidden></p>
+    </section>
+
     <section class="card queue">
       <div class="queue-head">
         <h2>Queue <span class="pill" id="qCount">0</span></h2>
@@ -69,6 +82,8 @@
         <div class="cmds">
           <code>/play &lt;link | search&gt;</code><span>Add a YouTube, Spotify or direct link, or search YouTube</span>
           <code>/playnext &lt;link&gt;</code><span>Add to the front of the queue</span>
+          <code>/search &lt;words&gt;</code><span>Show search results to choose from</span>
+          <code>/pick &lt;n&gt; · /picknext &lt;n&gt;</code><span>Add result #n of your last search (several: /pick 1 3 5)</span>
           <code>/pause</code> <span>Pause</span>
           <code>/resume</code><span>Continue</span>
           <code>/skip</code><span>Skip the current song</span>

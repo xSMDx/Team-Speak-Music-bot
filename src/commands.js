@@ -1,4 +1,5 @@
 import { config } from './config.js';
+import { findSongs, findProvider, getResult, searchProviders } from './search.js';
 
 export const fmtTime = (s) => {
   s = Math.max(0, Math.floor(s || 0));
@@ -21,6 +22,9 @@ const esc = (s) => String(s ?? '').replace(/[[\]]/g, '');
 const HELP = [
   ['play <link | search>', 'add a YouTube/Spotify/direct link or search YouTube  (alias /p)'],
   ['playnext <link | search>', 'add to the front of the queue  (alias /pn)'],
+  ['search <words>', 'show search results to choose from  (alias /find, /f)'],
+  ['pick <n> [n ...]', 'add result #n of your last search, e.g. /pick 2 or /pick 1 3 5  (alias /choose)'],
+  ['picknext <n>', 'like /pick, but plays next'],
   ['pause / resume', 'pause or continue playback'],
   ['skip', 'skip the current song  (alias /s)'],
   ['stop', 'stop and clear the whole queue'],
@@ -39,6 +43,7 @@ const HELP = [
 
 export function createCommandHandler(ts, music) {
   const P = config.commandPrefix;
+  const lastSearch = new Map(); // invoker unique id -> result ids of their last /search
 
   const commands = {
     async help() {
@@ -56,6 +61,32 @@ export function createCommandHandler(ts, music) {
     async playnext(args, msg) {
       if (!args) return `Usage: ${P}playnext <link or search words>`;
       return addSongs(args, msg, true);
+    },
+
+    async search(args, msg) {
+      const providers = searchProviders();
+      let [first, ...rest] = (args || '').split(/\s+/);
+      let provider = null;
+      if (providers.length > 1 && rest.length && findProvider(first)) provider = first;
+      else rest = [first, ...rest];
+      const query = rest.join(' ').trim();
+      if (!query) {
+        const hint = providers.length > 1 ? ` (start with ${providers.map((p) => p.aliases?.[0] || p.id).join(' / ')} to choose the site)` : '';
+        return `Usage: ${P}search <words>${hint}`;
+      }
+      const found = await findSongs(query, provider);
+      if (!found.results.length) return `Nothing found on ${found.provider.label} for [b]${esc(query)}[/b].`;
+      lastSearch.set(msg.invokerUID, found.results.map((r) => r.id));
+      const lines = found.results.map((r, i) => `[b]${i + 1}.[/b] ${esc(r.title)} [${r.duration ? fmtTime(r.duration) : '?'}]`);
+      return `[b]${found.provider.label} results for "${esc(query)}"[/b] - choose with ${P}pick <number>\n${lines.join('\n')}`;
+    },
+
+    async pick(args, msg) {
+      return pickResults(args, msg, false);
+    },
+
+    async picknext(args, msg) {
+      return pickResults(args, msg, true);
     },
 
     async pause() {
@@ -165,13 +196,30 @@ export function createCommandHandler(ts, music) {
   };
 
   const aliases = {
-    p: 'play', pn: 'playnext', next: 'skip', s: 'skip', continue: 'resume', unpause: 'resume',
+    p: 'play', pn: 'playnext', find: 'search', f: 'search', choose: 'pick', next: 'skip', s: 'skip', continue: 'resume', unpause: 'resume',
     q: 'queue', list: 'queue', nowplaying: 'np', current: 'np', rm: 'remove', delete: 'remove',
     volume: 'vol', v: 'vol', come: 'join', summon: 'join', link: 'web', h: 'help', commands: 'help',
   };
 
+  function pickResults(args, msg, next) {
+    const ids = lastSearch.get(msg.invokerUID);
+    if (!ids) return `Search first with ${P}search <words>, then pick a number.`;
+    const nums = /^all$/i.test(args) ? ids.map((_, i) => i + 1) : (args || '').split(/[\s,]+/).map((x) => parseInt(x, 10)).filter(Boolean);
+    if (!nums.length) return `Usage: ${P}${next ? 'picknext' : 'pick'} <number from your last ${P}search>`;
+    const bad = nums.find((n) => n < 1 || n > ids.length);
+    if (bad) return `There is no result #${bad}. Pick a number from 1 to ${ids.length}.`;
+    const entries = nums.map((n) => getResult(ids[n - 1]));
+    if (entries.some((e) => !e)) return `Those results expired. Search again with ${P}search.`;
+    const items = music.addEntries(entries, { addedBy: msg.invokerName, next });
+    return replyAdded(items, next);
+  }
+
   async function addSongs(args, msg, next) {
     const items = await music.add(args, { addedBy: msg.invokerName, next });
+    return replyAdded(items, next);
+  }
+
+  function replyAdded(items, next) {
     if (items.length === 1) {
       const pos = next ? 1 : music.queue.indexOf(items[0]) + 1;
       return pos > 0 && music.current
